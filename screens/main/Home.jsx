@@ -4,19 +4,21 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { TouchableOpacity, Platform } from "react-native";
 
 import { AntDesign, Ionicons, Feather } from "@expo/vector-icons";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import ProfileScreen from "./ProfileScreen";
 import CreatePostsScreen from "./CreatePostsScreen";
 import PostsScreen from "./PostsScreen";
-
+import { authSlice } from "../../redux/auth/authReducer";
 const MainTab = createBottomTabNavigator();
 import { useDispatch } from "react-redux";
 import { authSignOutUser } from "../../redux/auth/authOperations";
 
 export default function Home() {
   const dispatch = useDispatch();
-  const signOut = () => {
-    dispatch(authSignOutUser());
+  const signOut = async () => {
+    await AsyncStorage.removeItem("user");
+    dispatch(authSlice.actions.updateUserProfile({}));
+    dispatch(authSlice.actions.authStateChange({ stateChange: false }));
   };
 
   return (
@@ -36,7 +38,7 @@ export default function Home() {
       }}
     >
       <MainTab.Screen
-        options={() => ({
+        options={({ navigation }) => ({
           headerStyle: { borderBottomWidth: 2 },
           title: "Публікації",
           headerTintColor: "#212121",
@@ -52,7 +54,7 @@ export default function Home() {
             <TouchableOpacity
               activeOpacity={0.8}
               style={{ marginRight: 16 }}
-              onPress={signOut}
+              onPress={() => signOut({ navigation })}
             >
               <Feather name="log-out" size={24} color="#BDBDBD" />
             </TouchableOpacity>
@@ -72,6 +74,7 @@ export default function Home() {
 
       <MainTab.Screen
         options={({ navigation }) => ({
+          headerStyle: { borderBottomWidth: 2 },
           title: "Створити публікацію",
           headerTintColor: "#212121",
           headerTitleStyle: {
@@ -100,7 +103,7 @@ export default function Home() {
           tabBarIcon: ({ focused }) => (
             <AntDesign
               name="plus"
-              size={13}
+              size={24}
               color={focused ? "#fff" : "rgba(33, 33, 33, 0.8)"}
             />
           ),

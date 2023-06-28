@@ -16,7 +16,7 @@ import { authSignOutUser } from "../../redux/auth/authOperations";
 import { useDispatch, useSelector } from "react-redux";
 import * as ImagePicker from "expo-image-picker";
 import { useFonts } from "expo-font";
-
+import { authSlice } from "../../redux/auth/authReducer";
 import {
   collection,
   query,
@@ -26,7 +26,9 @@ import {
   increment,
   doc,
   addDoc,
+  orderBy,
 } from "firebase/firestore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function ProfileScreen() {
   const [userPosts, setUserPosts] = useState([]);
@@ -61,24 +63,23 @@ export default function ProfileScreen() {
       userId,
     });
   };
-
   const getUserPosts = async () => {
-    const dbRef = await collection(db, "posts");
-    const q = query(dbRef, where("userId", "==", userId));
+    const dbRef = collection(db, "posts");
+    const q = query(dbRef, orderBy("createdDate", "desc"));
     onSnapshot(q, (data) =>
       setUserPosts(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })))
     );
   };
-
   useEffect(() => {
-    (async () => {
-      await getUserPosts();
-    })();
+    getUserPosts();
   }, []);
 
-  const signOut = () => {
-    dispatch(authSignOutUser());
+  const signOut = async () => {
+    await AsyncStorage.removeItem("user");
+    dispatch(authSlice.actions.updateUserProfile({}));
+    dispatch(authSlice.actions.authStateChange({ stateChange: false }));
   };
+
   const [fontsLoaded] = useFonts({
     "Roboto-Regular": require("../../assets/fonts/Roboto-Regular.ttf"),
     "Roboto-Medium": require("../../assets/fonts/Roboto-Medium.ttf"),
@@ -113,7 +114,7 @@ export default function ProfileScreen() {
             <TouchableOpacity
               activeOpacity={0.8}
               style={styles.logout}
-              onPress={signOut}
+              onPress={() => signOut({ navigation })}
             >
               <Feather name="log-out" size={24} color="#BDBDBD" />
             </TouchableOpacity>

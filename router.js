@@ -1,19 +1,30 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createStackNavigator } from '@react-navigation/stack';
-import { TouchableOpacity, Platform } from "react-native";
+import { TouchableOpacity, Platform, Button } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useDispatch } from "react-redux";
 import RegistrationScreen from "./screens/auth/RegistrationScreen";
 import LoginScreen from "./screens/auth/LoginScreen";
 import MapScreen from "./screens/main/MapScreen";
 import CommentsScreen from "./screens/main/CommentsScreen";
 import Home from "./screens/main/Home";
-
+import { authSlice } from "./redux/auth/authReducer";
 
 const AuthStack = createNativeStackNavigator();
 const MainStack = createStackNavigator();
 
-export default function useRoute(isAuth) {
+const useRoute = (isAuth) => {
+  const dispatch = useDispatch();
+
+  const handleLogout = async ({ navigation }) => {
+    await AsyncStorage.removeItem("user");
+    dispatch(authSlice.actions.updateUserProfile({}));
+    dispatch(authSlice.actions.authStateChange({ stateChange: false }));
+    navigation.navigate("Login");
+  };
+
   if (!isAuth) {
     return (
       <AuthStack.Navigator
@@ -49,6 +60,12 @@ export default function useRoute(isAuth) {
               color='rgba(33, 33, 33, 0.8)'
             />
           </TouchableOpacity>
+        ),
+        headerRight: () => (
+          <Button
+            title="Logout"
+            onPress={() => handleLogout({ navigation })}
+          />
         )
       })} name='MapScreen' component={MapScreen} />
 
@@ -72,8 +89,15 @@ export default function useRoute(isAuth) {
               color='rgba(33, 33, 33, 0.8)'
             />
           </TouchableOpacity>
+        ),
+        headerRight: () => (
+          <Button
+            title="Logout"
+            onPress={() => handleLogout({ navigation })}
+          />
         )
       })} name='Comments' component={CommentsScreen} />
     </MainStack.Navigator>
   )
 }
+export default useRoute;

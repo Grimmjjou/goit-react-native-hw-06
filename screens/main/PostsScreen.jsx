@@ -13,7 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { FontAwesome } from "@expo/vector-icons";
 
 import { db } from "../../Firebase/config";
-import { collection, onSnapshot } from "firebase/firestore";
+import { onSnapshot, collection, query, orderBy } from "firebase/firestore";
 import { useFonts } from "expo-font";
 import { useSelector } from "react-redux";
 import uuid from "react-native-uuid";
@@ -24,16 +24,18 @@ export default function PostsScreen() {
   const { login, userEmail, userAvatar } = useSelector((state) => state.auth);
 
   const getDataFromFirestore = async () => {
-    const dbRef = await collection(db, "posts");
-    onSnapshot(dbRef, (data) =>
-      setPosts(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })))
+    const postsQuery = query(
+      collection(db, "posts"),
+      orderBy("createdDate", "desc")
     );
+
+    onSnapshot(postsQuery, (data) => {
+      setPosts(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
+    });
   };
 
   useEffect(() => {
-    (async () => {
-      await getDataFromFirestore();
-    })();
+    getDataFromFirestore();
   }, []);
   const [fontsLoaded] = useFonts({
     "Roboto-Regular": require("../../assets/fonts/Roboto-Regular.ttf"),

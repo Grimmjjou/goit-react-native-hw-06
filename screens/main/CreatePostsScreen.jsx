@@ -40,6 +40,7 @@ export default function CreatePostsScreen({ navigation }) {
       try {
         const { status } = await Camera.requestCameraPermissionsAsync();
         setHasPermission(status === "granted");
+        await MediaLibrary.requestPermissionsAsync();
       } catch (error) {
         console.log(error);
       }
@@ -80,9 +81,9 @@ export default function CreatePostsScreen({ navigation }) {
   }
   const takePhoto = async () => {
     const photo = await camera.takePictureAsync();
+    await MediaLibrary.createAssetAsync(photo.uri);
     setPhoto(photo.uri);
     setInputRegion(region[0]["country"] + ", " + region[0]["city"]);
-    await MediaLibrary.createAssetAsync(photo.uri);
   };
 
   const sendPhoto = () => {
@@ -109,6 +110,7 @@ export default function CreatePostsScreen({ navigation }) {
 
   const writeDataToFirestore = async () => {
     try {
+      const createdDate = Date.now();
       const photo = await uploadPhotoToServer();
       const docRef = await addDoc(collection(db, "posts"), {
         photo,
@@ -118,9 +120,12 @@ export default function CreatePostsScreen({ navigation }) {
         title,
         userId,
         login,
+        createdDate,
       });
+      console.log("Document written with ID: ", docRef.id);
     } catch (e) {
       console.error("Error adding document: ", e);
+      throw e;
     }
   };
 
@@ -166,13 +171,12 @@ export default function CreatePostsScreen({ navigation }) {
                 style={{ height: "100%", width: "100%", borderRadius: 10 }}
               />
             )}
-            {!photo && (
-              <View style={styles.snap}>
-                <TouchableOpacity onPress={takePhoto}>
-                  <Ionicons name="camera" size={24} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            )}
+
+            <View style={styles.snap}>
+              <TouchableOpacity onPress={takePhoto}>
+                <Ionicons name="camera" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
           </Camera>
         </View>
         <TouchableOpacity
@@ -202,10 +206,14 @@ export default function CreatePostsScreen({ navigation }) {
                 style={{
                   ...styles.postName,
                   color: "#BDBDBD",
+                  fontSize: 16,
+                  lineHeight: 19,
+                  fontFamily: "Roboto-Regular",
+                  fontWeight: "400",
                 }}
                 inputMode="navigation"
               >
-                <EvilIcons name="location" size={24} color="gray" />
+                <EvilIcons name="location" size={20} color="gray" />
                 Місцевість...
               </Text>
             ) : (

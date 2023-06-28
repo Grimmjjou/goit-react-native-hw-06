@@ -104,6 +104,7 @@ export default function RegistrationScreen() {
       dispatch(authSignUpUser(newAuth));
       setAuth(initialState);
     } catch (error) {
+      alert("Заповніть всі поля!!!");
       console.log(error);
     }
   };
