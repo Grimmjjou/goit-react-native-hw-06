@@ -27,7 +27,7 @@ const initialState = {
   login: "",
   email: "",
   password: "",
-  avatar: null,
+  avatar: "",
 };
 
 export default function RegistrationScreen() {
@@ -104,7 +104,6 @@ export default function RegistrationScreen() {
       dispatch(authSignUpUser(newAuth));
       setAuth(initialState);
     } catch (error) {
-      alert("Заповніть всі поля!!!");
       console.log(error);
     }
   };
@@ -313,7 +312,7 @@ const styles = StyleSheet.create({
   showTitle: {
     color: "#1B4371",
     fontSize: 16,
-    fontFamily: "Regular",
+    fontFamily: "Roboto-Regular",
     lineHeight: 19,
   },
   btn: {

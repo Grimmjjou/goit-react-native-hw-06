@@ -32,7 +32,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function ProfileScreen() {
   const [userPosts, setUserPosts] = useState([]);
-  const [avatar, setAvatar] = useState(null);
+  const [avatar, setAvatar] = useState();
   const navigation = useNavigation();
 
   const dispatch = useDispatch();
