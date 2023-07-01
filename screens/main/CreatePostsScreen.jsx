@@ -1,26 +1,25 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
-  Platform,
   View,
   Text,
   TouchableOpacity,
-  TextInput,
   Image,
   TouchableWithoutFeedback,
+  TextInput,
   Keyboard,
 } from "react-native";
 import { Ionicons, EvilIcons } from "@expo/vector-icons";
-import { Camera, CameraType } from "expo-camera";
+import { Camera } from "expo-camera";
 import * as Location from "expo-location";
-
-import { db, storage } from "../../Firebase/config";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useSelector } from "react-redux";
 import * as ImagePicker from "expo-image-picker";
 import * as MediaLibrary from "expo-media-library";
 import { useFonts } from "expo-font";
+
+import { db, storage } from "../../Firebase/config";
 
 export default function CreatePostsScreen({ navigation }) {
   const [location, setLocation] = useState(null);
@@ -29,52 +28,49 @@ export default function CreatePostsScreen({ navigation }) {
   const [title, setTitle] = useState("");
   const [region, setRegion] = useState(null);
   const [inputRegion, setInputRegion] = useState("");
-  const [type, setType] = useState(CameraType.back);
+  const [type, setType] = useState(Camera.Constants.Type.back);
   const [camera, setCamera] = useState(null);
   const [photo, setPhoto] = useState(null);
   const { userId, login } = useSelector((state) => state.auth);
   const locationRef = useRef();
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const { status } = await Camera.requestCameraPermissionsAsync();
-        setHasPermission(status === "granted");
-        await MediaLibrary.requestPermissionsAsync();
-      } catch (error) {
-        console.log(error);
-      }
-    })();
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        console.log("Permission to access location was denied");
-      }
-
-      Location.getCurrentPositionAsync({})
-        .then((locationPos) => {
-          const coords = {
-            latitude: locationPos.coords.latitude,
-            longitude: locationPos.coords.longitude,
-          };
-          setLocation(coords);
-          return coords;
-        })
-        .then((coords) => {
-          return Location.reverseGeocodeAsync(coords);
-        })
-        .then((regionName) => setRegion(regionName))
-        .catch();
-    })();
-  }, []);
-
   const [fontsLoaded] = useFonts({
     "Roboto-Regular": require("../../assets/fonts/Roboto-Regular.ttf"),
     "Roboto-Medium": require("../../assets/fonts/Roboto-Medium.ttf"),
   });
+
+  const requestCameraPermission = async () => {
+    const { status } = await Camera.requestCameraPermissionsAsync();
+    setHasPermission(status === "granted");
+  };
+
+  const requestLocationPermission = async () => {
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") {
+      console.log("Permission to access location was denied");
+    }
+
+    try {
+      const locationPos = await Location.getCurrentPositionAsync({});
+      const coords = {
+        latitude: locationPos.coords.latitude,
+        longitude: locationPos.coords.longitude,
+      };
+      const regionName = await Location.reverseGeocodeAsync(coords);
+      setRegion(regionName);
+      setLocation(coords);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    requestCameraPermission();
+    MediaLibrary.requestPermissionsAsync();
+  }, []);
+
+  useEffect(() => {
+    requestLocationPermission();
+  }, []);
 
   if (!fontsLoaded) {
     return null;
@@ -148,7 +144,32 @@ export default function CreatePostsScreen({ navigation }) {
   if (hasPermission === false) {
     return <Text>No access to camera</Text>;
   }
-
+  const renderCamera = () => {
+    if (photo) {
+      return (
+        <Camera style={styles.camera} ref={setCamera} type={type}>
+          <Image
+            source={{ uri: photo }}
+            style={{ height: "100%", width: "100%", borderRadius: 10 }}
+          />
+        </Camera>
+      );
+    } else {
+      return (
+        <Camera style={styles.camera} ref={setCamera} type={type}>
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(232, 232, 232, 1)",
+              borderColor: "#E8E8E8",
+              borderWidth: 1,
+              borderRadius: 10,
+            }}
+          />
+        </Camera>
+      );
+    }
+  };
   return (
     <TouchableWithoutFeedback
       onPress={() => {
@@ -162,22 +183,16 @@ export default function CreatePostsScreen({ navigation }) {
             overflow: "hidden",
             borderBottomRightRadius: 30,
             borderBottomLeftRadius: 30,
+            justifyContent: "center",
           }}
         >
-          <Camera style={styles.camera} ref={setCamera} type={type}>
-            {photo && (
-              <Image
-                source={{ uri: photo }}
-                style={{ height: "100%", width: "100%", borderRadius: 10 }}
-              />
-            )}
+          {photo ? renderCamera() : renderCamera()}
 
-            <View style={styles.snap}>
-              <TouchableOpacity onPress={takePhoto}>
-                <Ionicons name="camera" size={24} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          </Camera>
+          <View style={{ ...styles.snap, marginLeft: 150 }}>
+            <TouchableOpacity onPress={takePhoto}>
+              <Ionicons name="camera" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
         <TouchableOpacity
           style={styles.addPhotoBtn}

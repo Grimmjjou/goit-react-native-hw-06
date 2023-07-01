@@ -16,14 +16,7 @@ const AuthStack = createNativeStackNavigator();
 const MainStack = createStackNavigator();
 
 const useRoute = (isAuth) => {
-  const dispatch = useDispatch();
 
-  const handleLogout = async ({ navigation }) => {
-    await AsyncStorage.removeItem("user");
-    dispatch(authSlice.actions.updateUserProfile({}));
-    dispatch(authSlice.actions.authStateChange({ stateChange: false }));
-    navigation.navigate("Login");
-  };
 
   if (!isAuth) {
     return (
@@ -61,12 +54,7 @@ const useRoute = (isAuth) => {
             />
           </TouchableOpacity>
         ),
-        headerRight: () => (
-          <Button
-            title="Logout"
-            onPress={() => handleLogout({ navigation })}
-          />
-        )
+
       })} name='MapScreen' component={MapScreen} />
 
       <MainStack.Screen tabBarStyle={{ display: 'none' }} options={({ navigation }) => ({
@@ -90,12 +78,7 @@ const useRoute = (isAuth) => {
             />
           </TouchableOpacity>
         ),
-        headerRight: () => (
-          <Button
-            title="Logout"
-            onPress={() => handleLogout({ navigation })}
-          />
-        )
+
       })} name='Comments' component={CommentsScreen} />
     </MainStack.Navigator>
   )
